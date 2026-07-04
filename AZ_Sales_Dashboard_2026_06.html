@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AZ Sales Dashboard — M06/2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fb;--panel:#ffffff;--panel2:#eef0f8;--border:#d8dce8;
+  --text:#1a1d2e;--muted:#6b7185;
+  --edif:#2563eb;--jisu:#db2777;--tron:#d97706;--all:#7c3aed;
+  --good:#16a34a;--warn:#ca8a04;--bad:#dc2626;
+  --good-bg:rgba(22,163,74,.1);--warn-bg:rgba(202,138,4,.1);--bad-bg:rgba(220,38,38,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;}
+header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 28px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fff,#f0f2f9);flex-wrap:wrap;gap:10px;}
+header h1{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+header .sub{color:var(--muted);font-size:11px;margin-top:3px;}
+.fbar{display:flex;gap:6px;align-items:center;}
+.fbar .lbl{color:var(--muted);font-size:11px;font-weight:600;}
+.fbtn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.fbtn .dot{width:8px;height:8px;border-radius:50%;}
+.fbtn.active{background:var(--text);color:#fff;border-color:var(--text);}
+.fbtn:hover:not(.active){border-color:#999;}
+.wrap{padding:18px 28px 60px;max-width:1600px;margin:0 auto;}
+/* Section title */
+.stitle{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin:26px 0 10px;display:flex;align-items:center;gap:8px;}
+.stitle em{background:var(--panel2);color:var(--text);border-radius:4px;padding:1px 7px;font-size:10.5px;font-style:normal;}
+/* Grids */
+.grid{display:grid;gap:12px;}
+.g5{grid-template-columns:repeat(5,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g2{grid-template-columns:1fr 1fr;}
+.g21{grid-template-columns:2fr 1fr;}
+.g12{grid-template-columns:1fr 2fr;}
+/* Cards */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.card-sm{padding:11px 14px;}
+/* KPI hero */
+.kpi-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;}
+.kpi-val{font-size:28px;font-weight:800;line-height:1;}
+.kpi-sub{font-size:11.5px;color:var(--muted);margin-top:6px;}
+.kpi-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.pill{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.pill-g{background:var(--good-bg);color:var(--good);}
+.pill-w{background:var(--warn-bg);color:var(--warn);}
+.pill-b{background:var(--bad-bg);color:var(--bad);}
+/* Progress bar */
+.pbar-wrap{margin-top:8px;}
+.pbar-bg{background:#e0e3ef;border-radius:4px;height:7px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:4px;transition:width .4s;}
+.pbar-label{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-bottom:3px;}
+/* Brand accent */
+.accent-edif{border-top:3px solid var(--edif);}
+.accent-jisu{border-top:3px solid var(--jisu);}
+.accent-tron{border-top:3px solid var(--tron);}
+.accent-all{border-top:3px solid var(--all);}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:7px 8px;border-bottom:2px solid var(--border);white-space:nowrap;}
+th.r,td.r{text-align:right;}
+td{padding:6px 8px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(0,0,0,.025);}
+td.bold{font-weight:700;}
+/* Badges */
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;}
+.bg-good{background:var(--good-bg);color:var(--good);}
+.bg-bad{background:var(--bad-bg);color:var(--bad);}
+.bg-warn{background:var(--warn-bg);color:var(--warn);}
+.bg-info{background:rgba(37,99,235,.1);color:#2563eb;}
+/* Tab row */
+.tabs{display:flex;gap:6px;margin-bottom:12px;}
+.tab{border:1px solid var(--border);background:transparent;color:var(--muted);padding:4px 13px;border-radius:16px;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .12s;}
+.tab.active{background:var(--text);color:#fff;border-color:var(--text);}
+.tab:hover:not(.active){border-color:#999;}
+/* Channel / Category bars */
+.cbar-row{display:flex;align-items:center;gap:10px;margin:5px 0;}
+.cbar-label{width:130px;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.cbar-track{flex:1;background:#e0e3ef;border-radius:3px;height:20px;overflow:hidden;}
+.cbar-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:7px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;}
+.cbar-val{min-width:55px;text-align:right;font-size:11.5px;font-weight:600;}
+.cbar-yoy{min-width:54px;text-align:right;font-size:10.5px;}
+/* Mini chart card */
+.chart-title{font-size:12.5px;font-weight:700;margin-bottom:10px;}
+canvas{max-height:220px;}
+/* PIC cards */
+.pic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.pic-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.pic-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:8px;}
+.pic-ach{font-size:26px;font-weight:800;line-height:1;}
+.pic-row{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--border);}
+.pic-row:last-child{border-bottom:none;}
+.pic-row .l{color:var(--muted);}
+/* Stock */
+.stock-bar-row{display:flex;align-items:center;gap:8px;margin:4px 0;}
+.stock-bar-lbl{width:90px;font-size:11.5px;flex-shrink:0;}
+.stock-bar-track{flex:1;background:#e0e3ef;border-radius:3px;height:8px;overflow:hidden;}
+.stock-bar-fill{height:100%;border-radius:3px;}
+/* SKU Priority */
+.sku-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.sku-card{background:var(--panel2);border-radius:8px;padding:10px 12px;border-left:3px solid var(--border);}
+.sku-card .cnt{font-size:22px;font-weight:800;line-height:1;}
+.sku-card .lbl{font-size:10.5px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.3px;}
+.sku-card .amt{font-size:11px;color:var(--muted);margin-top:4px;}
+/* Divider */
+.divider{height:1px;background:var(--border);margin:6px 0;}
+/* Sell-in */
+.si-brand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+/* Footer */
+.footer{color:var(--muted);font-size:10.5px;text-align:center;padding:20px 0 8px;border-top:1px solid var(--border);margin-top:24px;}
+/* Responsive */
+@media(max-width:1200px){
+  .g5{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(2,1fr);}
+  .g21,.g12{grid-template-columns:1fr;}
+  .pic-grid{grid-template-columns:1fr 1fr;}
+  .sku-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>AZ SALES — EXECUTIVE DASHBOARD</h1>
+    <div class="sub">Month 6 / 2026 &nbsp;|&nbsp; YTD: Jan–Jun 2026 (H1) &nbsp;|&nbsp; Source: Monthly Sales Report I 2026 06.xlsx</div>
+  </div>
+  <div class="fbar">
+    <span class="lbl">Brand:</span>
+    <button class="fbtn active" data-b="All" onclick="setB('All')"><span class="dot" style="background:#7c3aed"></span>All</button>
+    <button class="fbtn" data-b="Edifier" onclick="setB('Edifier')"><span class="dot" style="background:#2563eb"></span>Edifier</button>
+    <button class="fbtn" data-b="Jisulife" onclick="setB('Jisulife')"><span class="dot" style="background:#db2777"></span>Jisulife</button>
+    <button class="fbtn" data-b="Tronsmart" onclick="setB('Tronsmart')"><span class="dot" style="background:#d97706"></span>Tronsmart</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ① SELL-IN -->
+<div class="stitle"><em>①</em> SELL-IN — FOB USD &nbsp;·&nbsp; Act Shipped + Back Order (Ordered) = LE Total vs Target</div>
+<div id="si-cards"></div>
+
+<!-- ② HERO KPIs -->
+<div class="stitle"><em>②</em> SELL-THROUGH PERFORMANCE — Month 6 & YTD H1 2026</div>
+<div class="grid g5" id="hero-kpis"></div>
+
+<!-- ③ BRAND SCORECARDS -->
+<div class="stitle"><em>③</em> BRAND SCORECARD — Sell-Through YTD (Mil VND)</div>
+<div class="grid g3" id="brand-cards"></div>
+
+<!-- ④ REVENUE TREND + MARKET SHARE -->
+<div class="stitle"><em>④</em> REVENUE TREND 2025 vs 2026 — Monthly Sell-Through (Bil VND)</div>
+<div class="grid g21">
+  <div class="card">
+    <div class="chart-title">Monthly Sell-Through — All Brands <span style="font-weight:400;color:var(--muted);font-size:11px">(Bil VND)</span></div>
+    <canvas id="trendChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="chart-title">Market Share by Brand — YTD Sell-Through</div>
+    <canvas id="shareChart" style="max-height:180px;margin-bottom:10px"></canvas>
+    <div id="share-legend"></div>
+  </div>
+</div>
+
+<!-- ⑤ CHANNEL & CATEGORY MIX -->
+<div class="stitle"><em>⑤</em> SELL-THROUGH MIX — Channel & Product Category (YTD)</div>
+<div class="grid g2">
+  <div class="card">
+    <div class="chart-title">By Channel</div>
+    <div class="tabs" id="ch-tabs"></div>
+    <div id="ch-bars"></div>
+  </div>
+  <div class="card">
+    <div class="chart-title">By Product Category</div>
+    <div class="tabs" id="cat-tabs"></div>
+    <div id="cat-bars"></div>
+  </div>
+</div>
+
+<!-- ⑥ PIC PERFORMANCE -->
+<div class="stitle"><em>⑥</em> SALES REP (PIC) PERFORMANCE — All Brands Combined (Mil VND)</div>
+<div class="pic-grid" id="pic-cards"></div>
+
+<!-- ⑦ TOP DEALERS -->
+<div class="stitle"><em>⑦</em> TOP DEALERS — by Brand (YTD Mil VND)</div>
+<div class="card">
+  <div class="tabs" id="dealer-tabs"></div>
+  <div id="dealer-table"></div>
+</div>
+
+<!-- ⑧ TOP PRODUCTS -->
+<div class="stitle"><em>⑧</em> TOP 10 PRODUCTS (SKU) — by Brand (YTD Mil VND)</div>
+<div class="card">
+  <div class="tabs" id="sku-tabs"></div>
+  <div id="sku-table"></div>
+</div>
+
+<!-- ⑨ STOCK OVERVIEW -->
+<div class="stitle"><em>⑨</em> STOCK OVERVIEW — On-hand + Incoming (Qty pcs · Amt Mil VND)</div>
+<div class="grid g3" id="stock-cards"></div>
+
+<!-- ⑩ SKU PRIORITY HANDLING -->
+<div class="stitle"><em>⑩</em> SKU PRIORITY HANDLING — Inventory Health (221 SKUs Total)</div>
+<div class="sku-grid" id="sku-priority"></div>
+
+<!-- HIGH INVENTORY ALERTS -->
+<div class="stitle"><em>⚠</em> HIGH INVENTORY ALERT — Top SKUs by On-hand + Incoming</div>
+<div class="grid g3" id="inv-alert"></div>
+
+<div class="footer">AZ Sales Dashboard · Data: Monthly Sales Report I 2026 06.xlsx · Generated Jun 2026 · All amounts in Mil VND unless noted</div>
+</div>
+
+<script>
+Chart.defaults.color='#6b7185';
+Chart.defaults.font.family='-apple-system,Segoe UI,Roboto,sans-serif';
+Chart.defaults.borderColor='#d8dce8';
+
+// ── DATA ──────────────────────────────────────────────────────────
+// Sell-Through (raw VND → display in Mil = /1e6, Bil = /1e9)
+const ST={
+  All:{
+    m:{act:4580118486,tgt:20768230003,py:10105922230,ach:0.2205,yoy:-0.5468},
+    y:{act:31298789292,tgt:102399707804,py:31589313590,ach:0.3057,yoy:-0.0092}
+  },
+  Edifier:{
+    m:{act:1834029196,tgt:7936332240,py:5940463351,ach:0.2311,yoy:-0.6913},
+    y:{act:19887031966,tgt:46279672000,py:24295003163,ach:0.4297,yoy:-0.1814}
+  },
+  Jisulife:{
+    m:{act:2679080091,tgt:11103039264,py:4010409809,ach:0.2413,yoy:-0.3320},
+    y:{act:9191629952,tgt:46982378880,py:5359333251,ach:0.1956,yoy:0.7151}
+  },
+  Tronsmart:{
+    m:{act:67009199,tgt:1728858499,py:155049070,ach:0.0388,yoy:-0.5678},
+    y:{act:2220127375,tgt:9137656924,py:1934977176,ach:0.2430,yoy:0.1474}
+  }
+};
+
+// Sell-In (USD) — act=shipped, bo=back order (ordered not yet shipped), le=act+bo
+const SI={
+  All:{
+    m:{act:480950,bo:928472,le:1409422,tgt:1020000,py:392999,achAct:0.4715,achLE:1.3818,yoy:0.2238},
+    y:{act:1898650,bo:928472,le:2827122,tgt:2850000,py:2181873,achAct:0.6662,achLE:0.9920,yoy:-0.1298}
+  },
+  Edifier:{
+    m:{act:60358,bo:417143,le:477501,tgt:400000,py:0,achAct:0.1509,achLE:1.1938,yoy:null},
+    y:{act:612454,bo:417143,le:1029597,tgt:1200000,py:1357188,achAct:0.5104,achLE:0.8580,yoy:-0.5487}
+  },
+  Jisulife:{
+    m:{act:321451,bo:511329,le:832780,tgt:560000,py:354189,achAct:0.5740,achLE:1.4871,yoy:-0.0924},
+    y:{act:981735,bo:511329,le:1493064,tgt:1400000,py:603353,achAct:0.7012,achLE:1.0665,yoy:0.6271}
+  },
+  Tronsmart:{
+    m:{act:99141,bo:0,le:99141,tgt:60000,py:38811,achAct:1.6524,achLE:1.6524,yoy:1.5545},
+    y:{act:304461,bo:0,le:304461,tgt:250000,py:221332,achAct:1.2178,achLE:1.2178,yoy:0.3756}
+  }
+};
+
+// Market Share YTD Sell-Through
+const SHARE={Edifier:0.6354,Jisulife:0.2937,Tronsmart:0.0709};
+
+// Revenue Trend (raw VND)
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TREND={
+  Edifier:{
+    y26:[5046593233,606801947,5755173618,3155889772,3488544199,1834029196,0,0,0,0,0,0],
+    y25:[5113137917,8281912568,5069416427,2032424093,3798112159,5940463351,5500494534,4175896042,4459331311,4847768503,4089349661,6097032302]
+  },
+  Jisulife:{
+    y26:[97367447,134822755,895242655,1781709853,3603407151,2679080091,0,0,0,0,0,0],
+    y25:[97665562,665665947,1232514391,2052690315,1310797036,4010409809,626801092,1760526604,661783018,225756687,379138164,293549492]
+  },
+  Tronsmart:{
+    y26:[288127773,293053952,443456787,509700330,618779333,67009199,0,0,0,0,0,0],
+    y25:[434401826,123170292,548187433,740211170,89006455,155049070,177161661,494711377,420697269,110719205,615732017,1029731085]
+  }
+};
+
+// Channel mix YTD (raw VND)
+const CHANNEL={
+  Edifier:[
+    {lbl:'Modern Trade',amt:11108381651,yoy:-0.3355},
+    {lbl:'General Trade',amt:8495005082,yoy:-0.3586},
+    {lbl:'Project',amt:161200019,yoy:7.658},
+    {lbl:'Walk-in',amt:122445214,yoy:-0.5198}
+  ],
+  Jisulife:[
+    {lbl:'Modern Trade',amt:6675018439,yoy:0.0443},
+    {lbl:'General Trade',amt:2268833516,yoy:0.2134},
+    {lbl:'Project',amt:29561834,yoy:-0.8776},
+    {lbl:'Walk-in',amt:218216162,yoy:-0.7482}
+  ],
+  Tronsmart:[
+    {lbl:'Modern Trade',amt:962091911,yoy:-0.3385},
+    {lbl:'General Trade',amt:1253913265,yoy:1.1210},
+    {lbl:'Walk-in',amt:4122198,yoy:-0.9072}
+  ]
+};
+
+// Category mix YTD (raw VND)
+const CATEGORY={
+  Edifier:[
+    {lbl:'Speaker',amt:17232016012,yoy:-0.2566},
+    {lbl:'Headphone',amt:2475422349,yoy:-0.6396},
+    {lbl:'Soundbar',amt:102151298,yoy:-0.2191},
+    {lbl:'Mouse',amt:77442306,yoy:9.158}
+  ],
+  Jisulife:[
+    {lbl:'Handheld Fan',amt:8830725611,yoy:0.0346},
+    {lbl:'Neckband Fan',amt:231741099,yoy:-0.3992},
+    {lbl:'Table Fan',amt:61704269,yoy:-0.6811},
+    {lbl:'Stroller Fan',amt:16085550,yoy:-0.8918}
+  ],
+  Tronsmart:[
+    {lbl:'Speaker',amt:2211632043,yoy:0.1710},
+    {lbl:'Headphone',amt:8495332,yoy:-0.9578}
+  ]
+};
+
+// PIC (Sales Rep) — all brands combined (Mil VND)
+const PIC=[
+  {
+    name:'Dương Ngọc Thuận',col:'#16a34a',
+    mAct:3261,mTgt:2415,
+    yAct:19632,yTgt:13100,yPY:14655,
+    note:'Edifier + Jisulife + Tronsmart · 150% YTD vs Tgt'
+  },
+  {
+    name:'Lê Văn Kiệt',col:'#dc2626',
+    mAct:1158,mTgt:5190,
+    yAct:10987,yTgt:27900,yPY:15438,
+    note:'Edifier + Jisulife + Tronsmart · 39% YTD vs Tgt'
+  },
+  {
+    name:'Accys Team',col:'#d97706',
+    mAct:77,mTgt:0,
+    yAct:144,yTgt:0,yPY:154,
+    note:'Edifier + Jisulife · No target assigned'
+  }
+];
+
+// Top Dealers per brand (Mil VND)
+const DEALERS={
+  Edifier:[
+    {d:'CELLPHONES',tgtM:2550000,actM:534410,achM:0.2096,tgtY:14500000,actY:6336667,achY:0.4370,pyY:12003772,yoy:-0.4721},
+    {d:'DAI TAI LOC',tgtM:900000,actM:682753,achM:0.7586,tgtY:4500000,actY:3900032,achY:0.8667,pyY:4039730,yoy:-0.0346},
+    {d:'VIETTEL',tgtM:0,actM:0,achM:null,tgtY:0,actY:2612405,achY:null,pyY:0,yoy:null},
+    {d:'FPT RETAIL',tgtM:0,actM:7800,achM:null,tgtY:0,actY:2153369,achY:null,pyY:1463796,yoy:0.4711},
+    {d:'DALITO VN',tgtM:240000,actM:207205,achM:0.8634,tgtY:1600000,actY:1298666,achY:0.8117,pyY:1040440,yoy:0.2482},
+    {d:'AD COMPUTER',tgtM:600000,actM:311777,achM:0.5196,tgtY:3000000,actY:754337,achY:0.2514,pyY:1858099,yoy:-0.5940},
+    {d:'HD RADIO',tgtM:450000,actM:30341,achM:0.0674,tgtY:2500000,actY:716797,achY:0.2867,pyY:0,yoy:null},
+    {d:'MAI THU',tgtM:225000,actM:0,achM:0,tgtY:1500000,actY:651119,achY:0.4341,pyY:1533768,yoy:-0.5755},
+    {d:'HN COMPUTER',tgtM:0,actM:0,achM:null,tgtY:0,actY:232062,achY:null,pyY:0,yoy:null},
+    {d:'LINH ANH',tgtM:0,actM:20698,achM:null,tgtY:0,actY:223204,achY:null,pyY:0,yoy:null}
+  ],
+  Jisulife:[
+    {d:'HASAKI',tgtM:0,actM:1799762,achM:null,tgtY:0,actY:3446699,achY:null,pyY:0,yoy:null},
+    {d:'CELLPHONES',tgtM:2400000,actM:401023,achM:0.1671,tgtY:12000000,actY:1698149,achY:0.1415,pyY:1073429,yoy:0.5820},
+    {d:'DEBOX STORE',tgtM:0,actM:160898,achM:null,tgtY:0,actY:918466,achY:null,pyY:427925,yoy:1.1463},
+    {d:'VHC',tgtM:0,actM:0,achM:null,tgtY:0,actY:515500,achY:null,pyY:378468,yoy:0.3621},
+    {d:'CASAME',tgtM:0,actM:0,achM:null,tgtY:0,actY:504714,achY:null,pyY:366488,yoy:0.3772},
+    {d:'AEON VN',tgtM:0,actM:65502,achM:null,tgtY:0,actY:420516,achY:null,pyY:0,yoy:null},
+    {d:'TAB STORE',tgtM:0,actM:0,achM:null,tgtY:0,actY:300936,achY:null,pyY:0,yoy:null},
+    {d:'PHONG VU',tgtM:0,actM:0,achM:null,tgtY:0,actY:271080,achY:null,pyY:0,yoy:null},
+    {d:'FPT RETAIL',tgtM:0,actM:16638,achM:null,tgtY:0,actY:242334,achY:null,pyY:1216072,yoy:-0.8007},
+    {d:'TDCN',tgtM:0,actM:19210,achM:null,tgtY:0,actY:237709,achY:null,pyY:0,yoy:null}
+  ],
+  Tronsmart:[
+    {d:'CELLPHONES',tgtM:240000,actM:47179,achM:0.1966,tgtY:1400000,actY:838456,achY:0.5989,pyY:1188041,yoy:-0.2943},
+    {d:'DO CHOI THE KY',tgtM:0,actM:0,achM:null,tgtY:0,actY:741985,achY:null,pyY:117896,yoy:5.2935},
+    {d:'CASAME',tgtM:0,actM:0,achM:null,tgtY:0,actY:291264,achY:null,pyY:366658,yoy:-0.2056},
+    {d:'TDCN',tgtM:0,actM:0,achM:null,tgtY:0,actY:156345,achY:null,pyY:0,yoy:null},
+    {d:'PHONG VU',tgtM:0,actM:19630,achM:null,tgtY:0,actY:121589,achY:null,pyY:0,yoy:null},
+    {d:'CHAU HUY',tgtM:0,actM:0,achM:null,tgtY:0,actY:35611,achY:null,pyY:9035,yoy:2.9415},
+    {d:'META',tgtM:0,actM:0,achM:null,tgtY:0,actY:28708,achY:null,pyY:16623,yoy:0.7270},
+    {d:'KOHNAN VN',tgtM:0,actM:0,achM:null,tgtY:0,actY:2047,achY:null,pyY:822,yoy:1.4896}
+  ]
+};
+
+// Top SKUs per brand (Mil VND)
+const SKUS={
+  Edifier:[
+    {p:'EDIF MR3',ytd:4357796,m:518690,yoy:-0.0497},
+    {p:'EDIF MR5',ytd:3395905,m:141213,yoy:19.656},
+    {p:'EDIF MR4',ytd:1780771,m:228167,yoy:-0.6747},
+    {p:'EDIF T5S',ytd:1033469,m:174012,yoy:0},
+    {p:'EDIF M60',ytd:1021678,m:86411,yoy:-0.3932},
+    {p:'EDIF M90',ytd:571101,m:278192,yoy:0},
+    {p:'EDIF MP230',ytd:474239,m:0,yoy:4.915},
+    {p:'EDIF HECATE G1500 MAX',ytd:384040,m:0,yoy:-0.1793},
+    {p:'EDIF MP330',ytd:378654,m:7800,yoy:15.651},
+    {p:'EDIF QR65',ytd:324003,m:0,yoy:-0.5609}
+  ],
+  Jisulife:[
+    {p:'JISL FAN 7 I 5000',ytd:1976496,m:1209873,yoy:0},
+    {p:'JISL LIFE 7 I 5000',ytd:1593518,m:3806,yoy:0.7519},
+    {p:'JISL FAN 7 I 3600',ytd:1554851,m:744542,yoy:0},
+    {p:'JISL ULTRA 2 I 9000',ytd:643341,m:116276,yoy:4.810},
+    {p:'JISL LIFE 7 I 3600',ytd:547384,m:0,yoy:-0.0998},
+    {p:'JISL FA53 PRO1S I 5000',ytd:516040,m:141078,yoy:-0.4999},
+    {p:'JISL LIFE 9 I 5000',ytd:331165,m:33174,yoy:0.2000},
+    {p:'JISL FA53 PRO1 I 3600',ytd:247316,m:102509,yoy:-0.7948},
+    {p:'JISL LIFE 10 I 4000',ytd:247309,m:20040,yoy:2.176},
+    {p:'JISL FAN 10S I 5000',ytd:119731,m:8820,yoy:0}
+  ],
+  Tronsmart:[
+    {p:'TRON T8 MINI',ytd:426568,m:35250,yoy:0},
+    {p:'TRON T8',ytd:406434,m:31559,yoy:0},
+    {p:'TRON FORCE MAX',ytd:355742,m:0,yoy:2.468},
+    {p:'TRON ELEMENT MEGA',ytd:284710,m:0,yoy:1.636},
+    {p:'TRON ELEMENT MEGA PRO',ytd:195397,m:0,yoy:2.455},
+    {p:'TRON T7 LITE',ytd:88450,m:0,yoy:0.5133},
+    {p:'TRON TRIP 2',ytd:74959,m:0,yoy:0},
+    {p:'TRON MIRTUNE S100',ytd:69985,m:0,yoy:-0.4798},
+    {p:'TRON T7',ytd:52500,m:0,yoy:-0.6290},
+    {p:'TRON BANG 2',ytd:38784,m:0,yoy:0}
+  ]
+};
+
+// Stock (Mil VND)
+const STOCK={
+  Edifier:{qty:16712,retail:5878,ws:10787,showroom:47,incoming:11602,amt:13894},
+  Jisulife:{qty:58384,retail:34155,ws:24088,showroom:137,incoming:44348,amt:12226},
+  Tronsmart:{qty:2187,retail:1297,ws:876,showroom:14,incoming:0,amt:1630},
+  Total:{qty:77283,retail:41330,ws:35751,showroom:198,incoming:55950,amt:27750}
+};
+
+// SKU Priority
+const SKU_PRI=[
+  {lbl:'0. Pushing',no:9,qty:1440,amt:517,color:'#7c3aed'},
+  {lbl:'1. Top Care',no:23,qty:3338,amt:2304,color:'#2563eb'},
+  {lbl:'2. High Care',no:15,qty:2222,amt:3787,color:'#16a34a'},
+  {lbl:'3. Normal',no:12,qty:1915,amt:1152,color:'#0891b2'},
+  {lbl:'4. Danger',no:52,qty:12558,amt:7615,color:'#ca8a04'},
+  {lbl:'5. Take Action',no:34,qty:12533,amt:6059,color:'#ea580c'},
+  {lbl:'6. Clear ASAP',no:75,qty:52937,amt:8748,color:'#dc2626'},
+  {lbl:'7. Neg Stock',no:1,qty:-35,amt:-24,color:'#9ca3af'}
+];
+
+// High inventory alerts (top picks)
+const INV_ALERT={
+  Edifier:[
+    {p:'EDIF P180 PLUS',cat:'Headphone',onhand:3047,incoming:0,le:3047,amt:335},
+    {p:'EDIF MP85',cat:'Speaker',onhand:2088,incoming:400,le:2488,amt:459},
+    {p:'EDIF MR3',cat:'Speaker',onhand:434,incoming:1850,le:2284,amt:682},
+    {p:'EDIF WH700NB PRO',cat:'Headphone',onhand:956,incoming:0,le:956,amt:717},
+    {p:'EDIF W830NB',cat:'Headphone',onhand:918,incoming:0,le:918,amt:1092}
+  ],
+  Jisulife:[
+    {p:'JISL FAN 7 I 5000',cat:'Handheld',onhand:16684,incoming:16520,le:33204,amt:0},
+    {p:'JISL FAN 7 I 3600',cat:'Handheld',onhand:10559,incoming:17600,le:28159,amt:0},
+    {p:'JISL FAN 10S I 5000',cat:'Handheld',onhand:8221,incoming:3024,le:11245,amt:0},
+    {p:'JISL FA53 PRO1 I 3600',cat:'Handheld',onhand:4267,incoming:0,le:4267,amt:2343},
+    {p:'JISL LIFE 10S I 5000',cat:'Handheld',onhand:4068,incoming:1440,le:5508,amt:1424}
+  ],
+  Tronsmart:[
+    {p:'TRON T8',cat:'Speaker',onhand:583,incoming:0,le:583,amt:601},
+    {p:'TRON T7 LITE',cat:'Speaker',onhand:423,incoming:0,le:423,amt:290},
+    {p:'TRON T8 MINI',cat:'Speaker',onhand:418,incoming:0,le:418,amt:196},
+    {p:'TRON SOUNFII Q20',cat:'Headphone',onhand:229,incoming:0,le:229,amt:111},
+    {p:'TRON TRIP 2',cat:'Speaker',onhand:224,incoming:0,le:224,amt:87}
+  ]
+};
+
+// ── HELPERS ──────────────────────────────────────────────────────
+const fmt=(v,d=1)=>{
+  if(v===null||v===undefined)return'—';
+  const a=Math.abs(v);
+  if(a>=1e9)return(v/1e9).toFixed(d)+'B';
+  if(a>=1e6)return(v/1e6).toFixed(d)+'M';
+  return v.toLocaleString();
+};
+const fmtM=(v,d=0)=>{
+  if(v===null||v===undefined)return'—';
+  return Math.round(v/1e6).toLocaleString()+'M';
+};
+const fmtB=(v,d=2)=>{
+  if(v===null||v===undefined)return'—';
+  return (v/1e9).toFixed(d)+'B';
+};
+const pct=(v,d=1)=>{
+  if(v===null||v===undefined)return'—';
+  return(v*100).toFixed(d)+'%';
+};
+const yoyBadge=(v)=>{
+  if(v===null||v===undefined)return'';
+  const sign=v>=0?'+':'';
+  const cls=v>=0?'bg-good':'bg-bad';
+  return`<span class="badge ${cls}">${sign}${pct(v)}</span>`;
+};
+const achBadge=(v)=>{
+  if(v===null||v===undefined)return'<span class="badge bg-info">N/A</span>';
+  const cls=v>=1?'bg-good':v>=0.7?'bg-warn':'bg-bad';
+  return`<span class="badge ${cls}">${pct(v)}</span>`;
+};
+const brandColor=(b)=>({Edifier:'#2563eb',Jisulife:'#db2777',Tronsmart:'#d97706',All:'#7c3aed'}[b]||'#7c3aed');
+
+let curB='All';
+let charts={};
+
+// ── RENDER HERO KPIs ─────────────────────────────────────────────
+function renderHero(b){
+  const d=ST[b]||ST.All;
+  const el=document.getElementById('hero-kpis');
+  const achCls=(v)=>v>=1?'pill-g':v>=0.5?'pill-w':'pill-b';
+  el.innerHTML=`
+    <div class="card accent-all">
+      <div class="kpi-label">Month Act — Sell-Through</div>
+      <div class="kpi-val" style="color:var(--all)">${fmtB(d.m.act)}</div>
+      <div class="kpi-row">
+        <span class="pill ${achCls(d.m.ach)}">${pct(d.m.ach)} vs Tgt</span>
+        ${yoyBadge(d.m.yoy)} vs PY
+      </div>
+      <div class="kpi-sub">Target: ${fmtB(d.m.tgt)} &nbsp;|&nbsp; PY: ${fmtB(d.m.py)}</div>
+    </div>
+    <div class="card accent-all">
+      <div class="kpi-label">YTD Act — Sell-Through H1</div>
+      <div class="kpi-val" style="color:var(--all)">${fmtB(d.y.act)}</div>
+      <div class="kpi-row">
+        <span class="pill ${achCls(d.y.ach)}">${pct(d.y.ach)} vs Tgt</span>
+        ${yoyBadge(d.y.yoy)} vs PY
+      </div>
+      <div class="kpi-sub">Target: ${fmtB(d.y.tgt)} &nbsp;|&nbsp; PY: ${fmtB(d.y.py)}</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">YTD Gap to Target</div>
+      <div class="kpi-val" style="color:var(--bad)">${fmtB(d.y.tgt-d.y.act)}</div>
+      <div class="pbar-wrap" style="margin-top:10px">
+        <div class="pbar-label"><span>Progress</span><span>${pct(d.y.ach)}</span></div>
+        <div class="pbar-bg"><div class="pbar-fill" style="width:${Math.min(d.y.ach*100,100)}%;background:${d.y.ach>=1?'#16a34a':d.y.ach>=0.5?'#ca8a04':'#dc2626'}"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">YTD Growth vs Last Year</div>
+      <div class="kpi-val" style="color:${d.y.yoy>=0?'var(--good)':'var(--bad)'}">${d.y.yoy>=0?'+':''}${pct(d.y.yoy)}</div>
+      <div class="kpi-sub" style="margin-top:8px">2026 YTD: ${fmtB(d.y.act)}</div>
+      <div class="kpi-sub">2025 YTD: ${fmtB(d.y.py)}</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Month Growth vs Last Year</div>
+      <div class="kpi-val" style="color:${d.m.yoy>=0?'var(--good)':'var(--bad)'}">${d.m.yoy>=0?'+':''}${pct(d.m.yoy)}</div>
+      <div class="kpi-sub" style="margin-top:8px">Jun 2026: ${fmtB(d.m.act)}</div>
+      <div class="kpi-sub">Jun 2025: ${fmtB(d.m.py)}</div>
+    </div>
+  `;
+}
+
+// ── RENDER BRAND CARDS ───────────────────────────────────────────
+function renderBrandCards(b){
+  const brands=['Edifier','Jisulife','Tronsmart'];
+  const el=document.getElementById('brand-cards');
+  el.innerHTML=brands.map(br=>{
+    const d=ST[br];
+    const col=brandColor(br);
+    const achY=d.y.ach;
+    const isActive=(b===br||b==='All');
+    return`<div class="card" style="border-top:3px solid ${col};opacity:${isActive?1:.4}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700;font-size:14px;color:${col}">${br}</div>
+        <span class="badge ${achY>=0.7?'bg-good':achY>=0.4?'bg-warn':'bg-bad'}">${pct(achY)} Ach</span>
+      </div>
+      <div class="kpi-row" style="margin:0 0 10px">
+        <div style="flex:1">
+          <div class="kpi-label">Month</div>
+          <div style="font-size:18px;font-weight:700">${fmtB(d.m.act,2)}</div>
+          <div style="font-size:10.5px;color:var(--muted)">${pct(d.m.ach)} vs Tgt · ${yoyBadge(d.m.yoy)} YoY</div>
+        </div>
+        <div style="flex:1;text-align:right">
+          <div class="kpi-label">YTD</div>
+          <div style="font-size:18px;font-weight:700">${fmtB(d.y.act,2)}</div>
+          <div style="font-size:10.5px;color:var(--muted)">${yoyBadge(d.y.yoy)} vs PY</div>
+        </div>
+      </div>
+      <div class="pbar-label"><span>YTD vs Target ${fmtB(d.y.tgt,1)}</span><span>${fmtB(d.y.act,2)}</span></div>
+      <div class="pbar-bg"><div class="pbar-fill" style="width:${Math.min(achY*100,100)}%;background:${col}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:6px">
+        <span>Market share (ST): <strong style="color:var(--text)">${pct(SHARE[br],1)}</strong></span>
+        <span>PY: ${fmtB(d.y.py,2)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── TREND CHART ──────────────────────────────────────────────────
+function renderTrend(b){
+  if(charts.trend)charts.trend.destroy();
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  const blist=b==='All'?['Edifier','Jisulife','Tronsmart']:[b];
+  const tot26=MONTHS.map((_,i)=>blist.reduce((s,br)=>s+TREND[br].y26[i],0)/1e9);
+  const tot25=MONTHS.map((_,i)=>blist.reduce((s,br)=>s+TREND[br].y25[i],0)/1e9);
+  const col=brandColor(b);
+  charts.trend=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:MONTHS,
+      datasets:[
+        {
+          label:'2026',
+          data:tot26,
+          borderColor:col,
+          backgroundColor:col+'22',
+          borderWidth:2.5,
+          pointRadius:MONTHS.map((_,i)=>i<6?5:0),
+          pointHoverRadius:7,
+          pointBackgroundColor:col,
+          pointBorderColor:'#fff',
+          pointBorderWidth:2,
+          fill:true,
+          tension:0.35,
+          segment:{borderDash:ctx=>ctx.p1DataIndex>=6?[4,4]:undefined}
+        },
+        {
+          label:'2025',
+          data:tot25,
+          borderColor:'rgba(107,113,133,.6)',
+          backgroundColor:'transparent',
+          borderWidth:1.8,
+          borderDash:[5,4],
+          pointRadius:4,
+          pointHoverRadius:6,
+          pointBackgroundColor:'rgba(107,113,133,.6)',
+          pointBorderColor:'#fff',
+          pointBorderWidth:1.5,
+          fill:false,
+          tension:0.35
+        }
+      ]
+    },
+    options:{
+      plugins:{
+        legend:{display:true,position:'top',labels:{boxWidth:12,usePointStyle:true,pointStyle:'line',font:{size:11}}},
+        tooltip:{
+          mode:'index',intersect:false,
+          callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)}B VND`}
+        }
+      },
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'#dde1ee'},ticks:{callback:v=>v+'B'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+// ── SHARE DONUT ──────────────────────────────────────────────────
+function renderShare(){
+  if(charts.share)charts.share.destroy();
+  const ctx=document.getElementById('shareChart').getContext('2d');
+  charts.share=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Edifier','Jisulife','Tronsmart'],
+      datasets:[{data:[SHARE.Edifier*100,SHARE.Jisulife*100,SHARE.Tronsmart*100],backgroundColor:['#2563eb','#db2777','#d97706'],borderWidth:2,borderColor:'#fff'}]
+    },
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toFixed(1)}%`}}},cutout:'60%'}
+  });
+  document.getElementById('share-legend').innerHTML=[
+    {br:'Edifier',col:'#2563eb',v:SHARE.Edifier},
+    {br:'Jisulife',col:'#db2777',v:SHARE.Jisulife},
+    {br:'Tronsmart',col:'#d97706',v:SHARE.Tronsmart}
+  ].map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${x.col};margin-right:6px"></span>${x.br}</span>
+    <span style="font-weight:700">${pct(x.v,1)}</span>
+  </div>`).join('');
+}
+
+// ── CHANNEL / CATEGORY BARS ──────────────────────────────────────
+let curCh='Edifier',curCat='Edifier';
+function renderChBars(br){
+  curCh=br;
+  const data=CHANNEL[br]||[];
+  const maxAmt=Math.max(...data.map(x=>x.amt));
+  const total=data.reduce((s,x)=>s+x.amt,0);
+  document.getElementById('ch-bars').innerHTML=data.map(x=>{
+    const pShare=total>0?x.amt/total:0;
+    const w=maxAmt>0?x.amt/maxAmt*100:0;
+    const col=brandColor(br);
+    return`<div class="cbar-row">
+      <div class="cbar-label">${x.lbl}</div>
+      <div style="flex:1">
+        <div class="cbar-track"><div class="cbar-fill" style="width:${w}%;background:${col}">${pct(pShare,1)}</div></div>
+      </div>
+      <div class="cbar-val">${Math.round(x.amt/1e6).toLocaleString()}M</div>
+      <div class="cbar-yoy">${yoyBadge(x.yoy)}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#ch-tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.br===br));
+}
+function renderCatBars(br){
+  curCat=br;
+  const data=CATEGORY[br]||[];
+  const maxAmt=Math.max(...data.map(x=>x.amt));
+  const total=data.reduce((s,x)=>s+x.amt,0);
+  document.getElementById('cat-bars').innerHTML=data.map(x=>{
+    const pShare=total>0?x.amt/total:0;
+    const w=maxAmt>0?x.amt/maxAmt*100:0;
+    const col=brandColor(br);
+    return`<div class="cbar-row">
+      <div class="cbar-label">${x.lbl}</div>
+      <div style="flex:1">
+        <div class="cbar-track"><div class="cbar-fill" style="width:${w}%;background:${col}">${pct(pShare,1)}</div></div>
+      </div>
+      <div class="cbar-val">${Math.round(x.amt/1e6).toLocaleString()}M</div>
+      <div class="cbar-yoy">${yoyBadge(x.yoy)}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#cat-tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.br===br));
+}
+function initMixTabs(){
+  const brands=['Edifier','Jisulife','Tronsmart'];
+  document.getElementById('ch-tabs').innerHTML=brands.map(br=>`<button class="tab${br==='Edifier'?' active':''}" data-br="${br}" onclick="renderChBars('${br}')">${br}</button>`).join('');
+  document.getElementById('cat-tabs').innerHTML=brands.map(br=>`<button class="tab${br==='Edifier'?' active':''}" data-br="${br}" onclick="renderCatBars('${br}')">${br}</button>`).join('');
+  renderChBars('Edifier');
+  renderCatBars('Edifier');
+}
+
+// ── SELL-IN CARDS ────────────────────────────────────────────────
+function renderSI(b){
+  const blist=b==='All'?['All','Edifier','Jisulife','Tronsmart']:['All',b];
+  const el=document.getElementById('si-cards');
+
+  // Grand summary row (always All)
+  const da=SI.All;
+  const summaryHtml=`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">
+    ${[
+      {lbl:'Total Shipped (Act)',val:'$'+da.y.act.toLocaleString(),sub:'YTD · '+achBadge(da.y.achAct)+' vs Tgt',col:'#7c3aed'},
+      {lbl:'Back Order (Ordered)',val:'$'+da.y.bo.toLocaleString(),sub:'YTD hàng đã đặt chưa nhận',col:'#ca8a04'},
+      {lbl:'Act + Order (LE)',val:'$'+da.y.le.toLocaleString(),sub:'YTD · '+achBadge(da.y.achLE)+' vs Tgt',col:'#16a34a'},
+      {lbl:'YTD Target',val:'$'+da.y.tgt.toLocaleString(),sub:'Gap LE: $'+(da.y.le-da.y.tgt>=0?'+':'')+Math.round(da.y.le-da.y.tgt).toLocaleString(),col:'#6b7185'}
+    ].map(x=>`<div class="card card-sm" style="border-left:4px solid ${x.col}">
+      <div class="kpi-label">${x.lbl}</div>
+      <div style="font-size:20px;font-weight:800;color:${x.col};line-height:1.1">${x.val}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:5px">${x.sub}</div>
+    </div>`).join('')}
+  </div>`;
+
+  // Per-brand cards
+  const brandHtml=`<div style="display:grid;grid-template-columns:repeat(${blist.filter(x=>x!=='All').length},1fr);gap:12px">
+  ${blist.filter(x=>x!=='All').map(br=>{
+    const d=SI[br];
+    const col=brandColor(br);
+    const leBarW=Math.min(d.y.le/d.y.tgt*100,130);
+    const actBarW=d.y.le>0?d.y.act/d.y.le*100:0;
+    return`<div class="card" style="border-top:3px solid ${col}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:800;font-size:14px;color:${col}">${br}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+          <span class="badge bg-info">Ach Act ${pct(d.y.achAct)}</span>
+          <span class="badge ${d.y.achLE>=1?'bg-good':'bg-warn'}">Ach+BO ${pct(d.y.achLE)}</span>
+        </div>
+      </div>
+
+      <!-- Month row -->
+      <div style="background:var(--panel2);border-radius:7px;padding:8px 10px;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px">Month 6</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+          <div><div style="font-size:10px;color:var(--muted)">Shipped</div><div style="font-weight:700;font-size:13px">$${d.m.act.toLocaleString()}</div></div>
+          <div><div style="font-size:10px;color:var(--warn)">Back Order</div><div style="font-weight:700;font-size:13px;color:var(--warn)">$${d.m.bo.toLocaleString()}</div></div>
+          <div><div style="font-size:10px;color:var(--good)">LE Total</div><div style="font-weight:700;font-size:13px;color:var(--good)">$${d.m.le.toLocaleString()}</div></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">
+          <span>vs Tgt $${d.m.tgt.toLocaleString()}</span>
+          <span>${achBadge(d.m.achAct)} act &nbsp; ${achBadge(d.m.achLE)} +BO</span>
+        </div>
+      </div>
+
+      <!-- YTD stacked bar -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px">YTD H1</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:8px">
+        <div><div style="font-size:10px;color:var(--muted)">Shipped</div><div style="font-weight:700;font-size:14px">$${d.y.act.toLocaleString()}</div></div>
+        <div><div style="font-size:10px;color:var(--warn)">Back Order</div><div style="font-weight:700;font-size:14px;color:var(--warn)">$${d.y.bo.toLocaleString()}</div></div>
+        <div><div style="font-size:10px;color:var(--good)">LE Total</div><div style="font-weight:700;font-size:14px;color:var(--good)">$${d.y.le.toLocaleString()}</div></div>
+      </div>
+
+      <!-- Stacked bar: act (solid) + bo (hatched) vs target line -->
+      <div style="position:relative;height:22px;background:#e0e3ef;border-radius:4px;overflow:visible;margin-bottom:6px">
+        <!-- Target marker -->
+        <div style="position:absolute;left:${Math.min(100,100)}%;top:-4px;bottom:-4px;width:2px;background:#dc2626;z-index:3"></div>
+        <!-- Act bar -->
+        <div style="position:absolute;left:0;top:0;height:100%;width:${Math.min(d.y.act/d.y.tgt*100,100)}%;background:${col};border-radius:4px 0 0 4px;z-index:2"></div>
+        <!-- BO bar -->
+        ${d.y.bo>0?`<div style="position:absolute;left:${Math.min(d.y.act/d.y.tgt*100,100)}%;top:0;height:100%;width:${Math.min(d.y.bo/d.y.tgt*100,100-(d.y.act/d.y.tgt*100))}%;background:repeating-linear-gradient(45deg,${col}55,${col}55 4px,${col}22 4px,${col}22 8px);z-index:1"></div>`:''}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted)">
+        <span><span style="color:${col};font-weight:700">■</span> Shipped &nbsp;<span style="color:${col}88;font-weight:700">▨</span> Ordered</span>
+        <span>Tgt $${d.y.tgt.toLocaleString()}</span>
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:var(--muted)">PY: $${d.y.py.toLocaleString()} &nbsp; ${d.y.yoy!==null?yoyBadge(d.y.yoy):''}</div>
+    </div>`;
+  }).join('')}
+  </div>`;
+
+  el.innerHTML=summaryHtml+brandHtml;
+}
+
+// ── PIC CARDS ────────────────────────────────────────────────────
+function renderPIC(){
+  const el=document.getElementById('pic-cards');
+  el.innerHTML=PIC.map(p=>{
+    const achY=p.yTgt>0?p.yAct/p.yTgt:null;
+    const achM=p.mTgt>0?p.mAct/p.mTgt:null;
+    const yoy=p.yPY>0?(p.yAct-p.yPY)/p.yPY:null;
+    return`<div class="pic-card" style="border-top:3px solid ${p.col}">
+      <div class="pic-name">${p.name}</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">
+        <div class="pic-ach" style="color:${p.col}">${p.yTgt>0?pct(achY):'—'}</div>
+        <div style="font-size:11.5px;color:var(--muted)">YTD Ach</div>
+        ${achY!==null?`<span class="badge ${achY>=1?'bg-good':achY>=0.5?'bg-warn':'bg-bad'}">${pct(achY)}</span>`:''}
+      </div>
+      <div class="pic-row"><span class="l">YTD Act</span><span style="font-weight:700">${p.yAct.toLocaleString()}M</span></div>
+      <div class="pic-row"><span class="l">YTD Target</span><span>${p.yTgt>0?p.yTgt.toLocaleString()+'M':'—'}</span></div>
+      <div class="pic-row"><span class="l">YoY vs PY</span><span>${yoyBadge(yoy)}</span></div>
+      <div class="pic-row"><span class="l">Month Act</span><span style="font-weight:700">${p.mAct.toLocaleString()}M</span></div>
+      <div class="pic-row"><span class="l">Month Target</span><span>${p.mTgt>0?p.mTgt.toLocaleString()+'M':'—'}</span></div>
+      <div class="pbar-wrap" style="margin-top:8px">
+        <div class="pbar-bg"><div class="pbar-fill" style="width:${Math.min((achY||0)*100,100)}%;background:${p.col}"></div></div>
+      </div>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:5px">${p.note}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── DEALER TABLE ─────────────────────────────────────────────────
+let curDealerBr='Edifier';
+function renderDealerTable(br){
+  curDealerBr=br;
+  document.querySelectorAll('#dealer-tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.br===br));
+  const data=DEALERS[br]||[];
+  const maxY=Math.max(...data.map(x=>x.actY));
+  document.getElementById('dealer-table').innerHTML=`
+  <table>
+    <thead><tr>
+      <th>#</th><th>Dealer</th>
+      <th class="r">Act Month</th><th class="r">Tgt Month</th><th class="r">Ach M</th>
+      <th class="r">Act YTD</th><th class="r">Tgt YTD</th><th class="r">Ach YTD</th>
+      <th class="r">PY YTD</th><th class="r">YoY</th><th style="min-width:120px">YTD Bar</th>
+    </tr></thead>
+    <tbody>
+    ${data.map((x,i)=>`<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td class="bold">${x.d}</td>
+      <td class="r">${x.actM>0?Math.round(x.actM/1e3).toLocaleString()+'M':'—'}</td>
+      <td class="r">${x.tgtM>0?Math.round(x.tgtM/1e3).toLocaleString()+'M':'—'}</td>
+      <td class="r">${achBadge(x.achM)}</td>
+      <td class="r bold">${Math.round(x.actY/1e3).toLocaleString()}M</td>
+      <td class="r">${x.tgtY>0?Math.round(x.tgtY/1e3).toLocaleString()+'M':'—'}</td>
+      <td class="r">${achBadge(x.achY)}</td>
+      <td class="r">${x.pyY>0?Math.round(x.pyY/1e3).toLocaleString()+'M':'—'}</td>
+      <td class="r">${yoyBadge(x.yoy)}</td>
+      <td><div style="background:#e0e3ef;border-radius:3px;height:8px;overflow:hidden"><div style="width:${maxY>0?x.actY/maxY*100:0}%;height:100%;background:${brandColor(br)};border-radius:3px"></div></div></td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+function initDealerTabs(){
+  document.getElementById('dealer-tabs').innerHTML=['Edifier','Jisulife','Tronsmart'].map(br=>`<button class="tab${br==='Edifier'?' active':''}" data-br="${br}" onclick="renderDealerTable('${br}')">${br}</button>`).join('');
+  renderDealerTable('Edifier');
+}
+
+// ── SKU TABLE ────────────────────────────────────────────────────
+function renderSKUTable(br){
+  document.querySelectorAll('#sku-tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.br===br));
+  const data=SKUS[br]||[];
+  const maxY=Math.max(...data.map(x=>x.ytd));
+  document.getElementById('sku-table').innerHTML=`
+  <table>
+    <thead><tr>
+      <th>#</th><th>Product SKU</th>
+      <th class="r">YTD (Mil VND)</th><th class="r">Month</th><th class="r">% YoY YTD</th>
+      <th style="min-width:150px">YTD Bar</th>
+    </tr></thead>
+    <tbody>
+    ${data.map((x,i)=>`<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td class="bold">${x.p}</td>
+      <td class="r bold">${Math.round(x.ytd/1e3).toLocaleString()}M</td>
+      <td class="r">${x.m>0?Math.round(x.m/1e3).toLocaleString()+'M':'—'}</td>
+      <td class="r">${yoyBadge(x.yoy)}</td>
+      <td><div style="background:#e0e3ef;border-radius:3px;height:8px;overflow:hidden"><div style="width:${maxY>0?x.ytd/maxY*100:0}%;height:100%;background:${brandColor(br)};border-radius:3px"></div></div></td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+function initSKUTabs(){
+  document.getElementById('sku-tabs').innerHTML=['Edifier','Jisulife','Tronsmart'].map(br=>`<button class="tab${br==='Edifier'?' active':''}" data-br="${br}" onclick="renderSKUTable('${br}')">${br}</button>`).join('');
+  renderSKUTable('Edifier');
+}
+
+// ── STOCK CARDS ──────────────────────────────────────────────────
+function renderStock(){
+  const brands=[
+    {k:'Edifier',col:'#2563eb'},{k:'Jisulife',col:'#db2777'},{k:'Tronsmart',col:'#d97706'}
+  ];
+  const el=document.getElementById('stock-cards');
+  el.innerHTML=brands.map(({k,col})=>{
+    const s=STOCK[k];
+    const t=STOCK.Total;
+    return`<div class="card" style="border-top:3px solid ${col}">
+      <div style="font-weight:700;color:${col};margin-bottom:10px">${k} — Stock</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div><div class="kpi-label">On-hand Qty</div><div style="font-size:20px;font-weight:700">${s.qty.toLocaleString()}</div></div>
+        <div style="text-align:right"><div class="kpi-label">Amt (Mil VND)</div><div style="font-size:20px;font-weight:700">${s.amt.toLocaleString()}M</div></div>
+      </div>
+      <div class="stock-bar-row"><div class="stock-bar-lbl" style="font-size:11px;color:var(--muted)">Retail</div><div class="stock-bar-track"><div class="stock-bar-fill" style="width:${s.qty>0?s.retail/s.qty*100:0}%;background:${col}cc"></div></div><div style="font-size:11px;min-width:60px;text-align:right">${s.retail.toLocaleString()} pcs</div></div>
+      <div class="stock-bar-row"><div class="stock-bar-lbl" style="font-size:11px;color:var(--muted)">Wholesale</div><div class="stock-bar-track"><div class="stock-bar-fill" style="width:${s.qty>0?s.ws/s.qty*100:0}%;background:${col}88"></div></div><div style="font-size:11px;min-width:60px;text-align:right">${s.ws.toLocaleString()} pcs</div></div>
+      ${s.incoming>0?`<div style="margin-top:8px;padding:6px 8px;background:rgba(202,138,4,.08);border-radius:6px;font-size:11.5px"><span style="color:var(--warn);font-weight:700">⟳ Incoming:</span> ${s.incoming.toLocaleString()} pcs</div>`:'<div style="margin-top:8px;padding:6px 8px;background:var(--panel2);border-radius:6px;font-size:11.5px;color:var(--muted)">No incoming stock</div>'}
+    </div>`;
+  }).join('');
+}
+
+// ── SKU PRIORITY ─────────────────────────────────────────────────
+function renderSKUPri(){
+  document.getElementById('sku-priority').innerHTML=SKU_PRI.map(x=>`
+    <div class="sku-card" style="border-left-color:${x.color}">
+      <div class="cnt" style="color:${x.color}">${x.no}</div>
+      <div class="lbl">${x.lbl}</div>
+      <div class="amt">${x.qty.toLocaleString()} pcs · ${x.amt.toLocaleString()}M VND</div>
+    </div>`).join('');
+}
+
+// ── INVENTORY ALERT ──────────────────────────────────────────────
+function renderInvAlert(b){
+  const brands=b==='All'?['Edifier','Jisulife','Tronsmart']:[b];
+  const el=document.getElementById('inv-alert');
+  el.innerHTML=brands.map(br=>{
+    const data=INV_ALERT[br]||[];
+    const col=brandColor(br);
+    return`<div class="card" style="border-top:3px solid ${col}">
+      <div style="font-weight:700;color:${col};margin-bottom:10px">${br} — High Inventory SKUs</div>
+      <table>
+        <thead><tr><th>Product</th><th class="r">On-hand</th><th class="r">Incoming</th><th class="r">LE Total</th><th class="r">Amt (M)</th></tr></thead>
+        <tbody>
+        ${data.map(x=>`<tr>
+          <td class="bold" style="font-size:11px">${x.p}</td>
+          <td class="r">${x.onhand.toLocaleString()}</td>
+          <td class="r" style="color:${x.incoming>0?'var(--warn)':'var(--muted)'}">${x.incoming>0?x.incoming.toLocaleString():'—'}</td>
+          <td class="r bold">${x.le.toLocaleString()}</td>
+          <td class="r">${x.amt>0?x.amt.toLocaleString()+'M':'—'}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+// ── BRAND FILTER ─────────────────────────────────────────────────
+function setB(b){
+  curB=b;
+  document.querySelectorAll('.fbtn[data-b]').forEach(btn=>btn.classList.toggle('active',btn.dataset.b===b));
+  renderHero(b);
+  renderBrandCards(b);
+  renderTrend(b);
+  renderSI(b);
+  renderInvAlert(b);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+renderHero('All');
+renderBrandCards('All');
+renderTrend('All');
+renderShare();
+initMixTabs();
+renderSI('All');
+renderPIC();
+initDealerTabs();
+initSKUTabs();
+renderStock();
+renderSKUPri();
+renderInvAlert('All');
+</script>
+</body>
+</html>
